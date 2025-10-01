@@ -35,6 +35,8 @@ if (file_exists($autoload)) {
    die();
 }
 
+   use Spipu\Html2Pdf\Html2Pdf;
+
 class PluginUseditemsexportExport extends CommonDBTM {
 
    public static $rightname = 'plugin_useditemsexport_export';
@@ -144,7 +146,7 @@ class PluginUseditemsexportExport extends CommonDBTM {
       if ($canpurge && count($exports) > 0) {
          $rand = mt_rand();
          Html::openMassiveActionsForm('mass' . __CLASS__ . $rand);
-         $massiveactionparams = ['item' => $item, 'container' => 'mass'.__CLASS__.$rand];
+         $massiveactionparams = ['item' => $item, 'container' => 'mass'.__CLASS__.$rand, 'deprecated' => true];
          Html::showMassiveActions($massiveactionparams);
       }
 
@@ -256,19 +258,26 @@ class PluginUseditemsexportExport extends CommonDBTM {
       $Author->getFromDB(Session::getLoginUserID());
 
       // Logo
-      $logo = GLPI_PLUGIN_DOC_DIR.'/useditemsexport/logo.png';
+      $logo = GLPI_ROOT.'/pics/fd_logo.png';
 
       ob_start();
       ?>
       <style type="text/css">
-         table { border: 1px solid #000000; width: 100%; font-size: 10pt; font-family: helvetica, arial, sans-serif; }
+         table { border: 1px solid #000000; width: 100%; font-size: 9pt; font-family: helvetica, arial, sans-serif; border-collapse: collapse; }
+         th { background-color: #cccccc; border: 1px solid #000000; padding: 4px; font-weight: bold; }
+         td { border: 1px solid #000000; padding: 4px; }
+         .header-table { border: none !important; }
+         .header-table td { border: none !important; }
+         .no-border { border: none !important; }
       </style>
-      <page backtop="70mm" backleft="10mm" backright="10mm" backbottom="30mm">
+      <page backtop="45mm" backleft="10mm" backright="10mm" backbottom="15mm">
          <page_header>
-            <table>
+            <table class="header-table">
                <tr>
-                  <td style="height: 60mm; width: 40%; text-align: center"><img src="<?php echo $logo; ?>" /></td>
-                  <td style="width: 60%; text-align: center;">
+                  <td style="height: 35mm; width: 40%; text-align: center;" class="no-border">
+                     <img src="<?php echo $logo; ?>" style="max-height: 30mm; max-width: 90%;" />
+                  </td>
+                  <td style="width: 60%; text-align: center; font-size: 9pt;" class="no-border">
                   <?php echo $entity_address; ?>
                   </td>
                </tr>
@@ -277,88 +286,105 @@ class PluginUseditemsexportExport extends CommonDBTM {
 
          <table>
             <tr>
-               <td style="border: 1px solid #000000; text-align: center; width: 100%; font-size: 15pt; height: 8mm;">
-                  <?php echo __('Asset export ref : ', 'useditemsexport') . $refnumber; ?>
+               <td style="text-align: center; width: 100%; font-size: 13pt; padding: 6px;">
+                  <strong><?php echo __('Asset export ref : ', 'useditemsexport') . $refnumber; ?></strong>
                </td>
             </tr>
          </table>
 
-         <br><br><br><br><br>
+         <br>         
+         <?php
+         $allUsedItemsForUser = self::getAllUsedItemsForUser($users_id);
+         
+         $totalItems = 0;
+         $allItems = [];
+         
+         foreach ($allUsedItemsForUser as $itemtype => $used_items) {
+            $item = getItemForItemtype($itemtype);
+            foreach ($used_items as $item_datas) {
+               $allItems[] = [
+                  'serial' => isset($item_datas['serial']) ? $item_datas['serial'] : '',
+                  'otherserial' => isset($item_datas['otherserial']) ? $item_datas['otherserial'] : '',
+                  'name' => $item_datas['name'],
+                  'type' => $item->getTypeName(1)
+               ];
+               $totalItems++;
+            }
+         }
+         
+         if ($totalItems == 0) {
+            ?>
+            <table>
+               <tr>
+                  <td style="text-align: center; padding: 20px;">
+                     <?php echo __('No item to display'); ?>
+                  </td>
+               </tr>
+            </table>
+            <?php
+         } else {
+            $itemsPerTable = 12;
+            $tableCount = 0;
+            
+            for ($i = 0; $i < $totalItems; $i += $itemsPerTable) {
+               if ($tableCount > 0) {
+                  echo '<br>';
+               }
+               ?>
+               <table>
+                  <thead>
+                  <tr>
+                     <th style="width: 25%;"><?php echo __('Serial number'); ?></th>
+                     <th style="width: 25%;"><?php echo __('Inventory number'); ?></th>
+                     <th style="width: 25%;"><?php echo __('Name'); ?></th>
+                     <th style="width: 25%;"><?php echo __('Type'); ?></th>
+                  </tr>
+                  </thead>
+                  <tbody>
+                  <?php
+                  for ($j = $i; $j < min($i + $itemsPerTable, $totalItems); $j++) {
+                     $itemData = $allItems[$j];
+                     ?>
+                     <tr>
+                        <td style="width: 25%;"><?php echo $itemData['serial']; ?></td>
+                        <td style="width: 25%;"><?php echo $itemData['otherserial']; ?></td>
+                        <td style="width: 25%;"><?php echo $itemData['name']; ?></td>
+                        <td style="width: 25%;"><?php echo $itemData['type']; ?></td>
+                     </tr>
+                     <?php
+                  }
+                  ?>
+                  </tbody>
+               </table>
+               <?php
+               $tableCount++;
+            }
+         }
+         ?>
+         
+         <br><br>
          <table>
             <tr>
-              <th style="width: 25%;">
-                  <?php echo __('Serial number'); ?>
-               </th>
-               <th style="width: 25%;">
-                  <?php echo __('Inventory number'); ?>
-               </th>
-               <th style="width: 25%;">
-                  <?php echo __('Name'); ?>
-               </th>
-               <th style="width: 25%;">
-                  <?php echo __('Type'); ?>
-               </th>
-            </tr>
-            <?php
-
-            $allUsedItemsForUser = self::getAllUsedItemsForUser($users_id);
-
-            foreach ($allUsedItemsForUser as $itemtype => $used_items) {
-
-               $item = getItemForItemtype($itemtype);
-
-               foreach ($used_items as $item_datas) {
-
-                  ?>
-            <tr>
-               <td style="width: 25%;">
-                  <?php
-                  if (isset($item_datas['serial'])) {
-                     echo $item_datas['serial'];
-                  } ?>
+               <td style="width: 50%; border-bottom: 1px solid #000000; padding: 5px;">
+                  <strong><?php echo $Author->getFriendlyName(); ?></strong>
                </td>
-               <td style="width: 25%;">
-                  <?php
-                  if (isset($item_datas['otherserial'])) {
-                     echo $item_datas['otherserial'];
-                  } ?>
-               </td>
-               <td style="width: 25%;">
-                  <?php echo $item_datas['name']; ?>
-               </td>
-               <td style="width: 25%;">
-                  <?php echo $item->getTypeName(1); ?>
-               </td>
-            </tr>
-                  <?php
-
-               }
-            }
-
-            ?>
-         </table>
-         <br><br><br><br><br>
-         <table style="border-collapse: collapse;">
-            <tr>
-               <td style="width: 50%; border-bottom: 1px solid #000000;">
-                  <strong><?php echo $Author->getFriendlyName(); ?> :</strong>
-               </td>
-               <td style="width: 50%; border-bottom: 1px solid #000000">
-                  <strong><?php echo $User->getFriendlyName(); ?> :</strong>
+               <td style="width: 50%; border-bottom: 1px solid #000000; padding: 5px;">
+                  <strong><?php echo $User->getFriendlyName(); ?></strong>
                </td>
             </tr>
             <tr>
-               <td style="border: 1px solid #000000; width: 50%; vertical-align: top">
-                  <?php echo __('Signature', 'useditemsexport'); ?> : <br><br><br><br><br>
+               <td style="width: 50%; vertical-align: top; padding: 5px;">
+                  <?php echo __('Signature', 'useditemsexport'); ?> :<br><br><br><br>
                </td>
-               <td style="border: 1px solid #000000; width: 50%; vertical-align: top;">
-                  <?php echo __('Signature', 'useditemsexport'); ?> : <br><br><br><br><br>
+               <td style="width: 50%; vertical-align: top; padding: 5px;">
+                  <?php echo __('Signature', 'useditemsexport'); ?> :<br><br><br><br>
                </td>
             </tr>
          </table>
+         
          <page_footer>
-            <div style="width: 100%; text-align: center; font-size: 8pt">
-               - <?php echo $useditemsexport_config['footer_text']; ?> -
+            <div style="width: 100%; text-align: center; font-size: 7pt; padding-top: 5px;">
+               - <?php echo $useditemsexport_config['footer_text']; ?> - Page [[page_cu]]/[[page_nb]]
             </div>
          </page_footer>
       </page>
@@ -367,13 +393,16 @@ class PluginUseditemsexportExport extends CommonDBTM {
       $content = ob_get_clean();
 
       // Generate PDF with HTML2PDF lib
-      $pdf = new HTML2PDF($useditemsexport_config['orientation'],
-                          $useditemsexport_config['format'],
-                          $useditemsexport_config['language'],
-                          true,
-                          'UTF-8'
+      $pdf = new Html2Pdf(
+         $useditemsexport_config['orientation'],
+         $useditemsexport_config['format'],
+         $useditemsexport_config['language'],
+         true,
+         'UTF-8',
+         [10, 10, 10, 10]
       );
 
+      $pdf->setDefaultFont('helvetica');
       $pdf->pdf->SetDisplayMode('fullpage');
       $pdf->writeHTML($content);
 

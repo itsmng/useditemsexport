@@ -1,16 +1,16 @@
 {
     "require": {
-        "php": "^7.2",
-        "spipu/html2pdf": "^4.6"
+        "php": "^7.2|^8.0",
+        "spipu/html2pdf": "^5.2"
     },
     "require-dev": {
-        "glpi-project/tools": "^0.1"
+        "glpi-project/tools": "^0.7"
     },
     "config": {
         "optimize-autoloader": true,
-        "platform": {
-            "php": "7.2.0"
-        },
-        "sort-packages": true
+        "sort-packages": true,
+        "allow-plugins": {
+            "composer/installers": true
+        }
     }
 }
