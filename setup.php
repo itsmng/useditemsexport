@@ -85,7 +85,7 @@ function plugin_version_useditemsexport() {
       'oldname' => '',
       'license' => 'GPLv2+',
       'author'  => "TECLIB",
-      'homepage'=>'https://github.com/pluginsGLPI/useditemsexport',
+      'homepage'=>'https://github.com/itsmng/useditemsexport',
       'requirements'   => [
          'glpi' => [
             'min' => PLUGIN_USEDITEMSEXPORT_MIN_GLPI,
