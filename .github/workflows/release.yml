@@ -20,7 +20,7 @@ jobs:
         run: |
           cd /home/runner/work/useditemsexport/
           cd useditemsexport && composer install --no-dev && cd ..
-          rm -r useditemsexport/.git* useditemsexport/tools useditemsexport/README.md useditemsexport/composer.*
+          rm -r useditemsexport/.git* useditemsexport/README.md useditemsexport/composer.*
           tar -zcvf useditemsexport-${{ github.ref_name }}.tgz useditemsexport
 
       - name: Upload release
